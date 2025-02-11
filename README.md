@@ -44,21 +44,11 @@ Em seguida, compile o projeto:
 colcon build --symlink-install
 ```
 
-Em terminais separados:
+Para rodar a simulação, execute em terminais diferentes:
 ```bash
-export TURTLEBOT3_MODEL=waffle
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/humble/share/turtlebot3_gazebo/models
-ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+source install/setup.bash
+ros2 launch robo_autonomo autonomous_movement.launch.py
 ```
 
 ```bash
-ros2 launch slam_toolbox online_async_launch.py
-```
-
-```bash
-ros2 launch nav2_bringup navigation_launch.py
-```
-
-```bash
-rviz2 -d rviz/teste.rviz
 ```
