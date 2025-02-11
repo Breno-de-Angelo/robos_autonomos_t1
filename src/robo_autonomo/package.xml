@@ -7,6 +7,11 @@
   <maintainer email="brenodeangelo@gmail.com">breno</maintainer>
   <license>TODO: License declaration</license>
 
+  <depend>turtlebot3</depend>
+  <depend>turtlebot3_gazebo</depend>
+  <depend>slam_toolbox</depend>
+  <depend>nav2_bringup</depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
