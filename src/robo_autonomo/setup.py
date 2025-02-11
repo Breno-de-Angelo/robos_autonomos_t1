@@ -24,6 +24,7 @@ setup(
         "console_scripts": [
             # Add your executable scripts here if needed
             'send_goal = robo_autonomo.send_goal:main',
+            'pilot = robo_autonomo.pilot:main',
         ],
     },
 )
