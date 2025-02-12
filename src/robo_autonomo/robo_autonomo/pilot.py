@@ -2,6 +2,7 @@ import rclpy
 import numpy as np
 import cv2
 
+import rclpy.logging
 from rclpy.node import Node, Publisher, Subscription
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
@@ -16,6 +17,7 @@ class Pilot(Node):
     map_sub_: Subscription
     current_map: OccupancyGrid | None
     current_costmap: OccupancyGrid | None
+    no_valid_goal_count: int
 
     def __init__(self):
         super().__init__('pilot')
@@ -34,6 +36,7 @@ class Pilot(Node):
 
         self.current_map = None
         self.current_costmap = None
+        self.no_valid_goal_count = 0
         self.timer = self.create_timer(15.0, self.process_map)
 
         self.get_logger().info(f'Debug CV Mode: {"Enabled" if self.debug_cv else "Disabled"}')
@@ -131,6 +134,10 @@ class Pilot(Node):
         self.contour_pub_.publish(img_msg)
 
     def find_goal(self):
+        if self.no_valid_goal_count > 2:
+            self.get_logger().info('No valid goal found for too long. Environment may be fully explored')
+            raise SystemExit
+
         binary_known_cells_map = self.get_known_map_binary_image()
         costmap_matrix = self.get_costmap_matrix()
         contours, _ = cv2.findContours(binary_known_cells_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -148,11 +155,14 @@ class Pilot(Node):
 
         if closest_point is None:
             self.get_logger().info('No valid goal found')
+            self.no_valid_goal_count += 1
             return
 
         goal_pose = self.get_goal_pose(closest_point)
         self.goal_pose_pub_.publish(goal_pose)
         self.get_logger().info(f'Published goal at: {goal_pose.pose.position.x}, {goal_pose.pose.position.y}')
+
+        self.no_valid_goal_count = 0
 
     def process_map(self):
         if not self.current_map or not self.current_costmap:
@@ -164,7 +174,10 @@ class Pilot(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = Pilot()
-    rclpy.spin(node)
+    try:
+        rclpy.spin(node)
+    except SystemExit:
+        rclpy.logging.get_logger('pilot').info('Exiting')
     node.destroy_node()
     rclpy.shutdown()
 
