@@ -1,8 +1,9 @@
 import rclpy
+import rclpy.logging
+import rclpy.time
 import numpy as np
 import cv2
 
-import rclpy.logging
 from rclpy.node import Node, Publisher, Subscription
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
@@ -91,7 +92,6 @@ class Pilot(Node):
         if cost > 100:
             cost = 100
         return cost
-
 
     def find_closest_point(self, robot_position, contours, costmap_matrix, max_cost=30.0):
         cost = max_cost
