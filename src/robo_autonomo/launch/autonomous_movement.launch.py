@@ -15,10 +15,8 @@ def generate_launch_description():
         os.environ['GAZEBO_MODEL_PATH'] = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models')
 
     this_package_dir = get_package_share_directory('robo_autonomo')
-
-    turtlebot3_gazebo_launch_dir = get_package_share_directory('turtlebot3_gazebo')
     turtlebot3_world_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([turtlebot3_gazebo_launch_dir, '/launch/turtlebot3_world.launch.py'])
+        PythonLaunchDescriptionSource([this_package_dir, '/launch/turtlebot3_world.launch.py'])
     )
     slam_toolbox_launch_dir = get_package_share_directory('slam_toolbox')
     slam_toolbox_launch = IncludeLaunchDescription(
