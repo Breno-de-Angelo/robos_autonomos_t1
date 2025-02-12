@@ -15,6 +15,7 @@ class Pilot(Node):
     goal_pose_pub_: Publisher
     map_sub_: Subscription
     current_map: OccupancyGrid | None
+    current_costmap: OccupancyGrid | None
 
     def __init__(self):
         super().__init__('pilot')
@@ -24,6 +25,7 @@ class Pilot(Node):
 
         self.goal_pose_pub_ = self.create_publisher(PoseStamped, '/goal_pose', 10)
         self.map_sub_ = self.create_subscription(OccupancyGrid, '/map', self.map_callback, 10)
+        self.costmap_sub_ = self.create_subscription(OccupancyGrid, '/global_costmap/costmap', self.costmap_callback, 10)
         if self.debug_cv:
             self.contour_pub_ = self.create_publisher(Image, '/contour_image', 10)
 
@@ -31,6 +33,7 @@ class Pilot(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.current_map = None
+        self.current_costmap = None
         self.timer = self.create_timer(15.0, self.process_map)
 
         self.get_logger().info(f'Debug CV Mode: {"Enabled" if self.debug_cv else "Disabled"}')
@@ -38,6 +41,10 @@ class Pilot(Node):
     def map_callback(self, msg: OccupancyGrid):
         self.get_logger().info('Received map')
         self.current_map = msg
+
+    def costmap_callback(self, msg: OccupancyGrid):
+        self.get_logger().info('Received costmap')
+        self.current_costmap = msg
 
     def get_robot_position_map_image_frame(self, robot_tf_x,  robot_tf_y):
         x_robot = robot_tf_x - self.current_map.info.origin.position.x
@@ -56,39 +63,44 @@ class Pilot(Node):
         img[data >= 0] = 255    # Known cells -> White
         return img
 
-    def get_occupancy_map_matrix(self):
+    def get_costmap_matrix(self):
         """Returns an array 0 is free, 255 is occupied and 127 is unknown"""
-        width = self.current_map.info.width
-        height = self.current_map.info.height
-        data = np.array(self.current_map.data, dtype=np.int8).reshape((height, width))
-        data_scaled = np.where(data >= 0, (data / 100.0 * 255).astype(np.uint8), -1)
-        return data_scaled
+        width = self.current_costmap.info.width
+        height = self.current_costmap.info.height
+        data = np.array(self.current_costmap.data, dtype=np.int8).reshape((width, height))
+        return data
 
-    def get_occupancy_value(self, occupancy_matrix, x, y, kernel_size=5):
-        """Instead of simply getting the value of occupancy at (x, y), it gets the average of the 8 surrounding cells"""
-        self.get_logger().info(f'Getting occupancy value at ({x}, {y})')
+    def get_cost_heuristic(self, costmap_matrix, x, y, robot_position, dist):
+        """
+        Heuristic function to get the cost of a point based on its distance to the robot and global costmap.
+        The farther the point is to the robot and the higher the occupancy value, the higher the cost.
+        """
+        if costmap_matrix[x, y] < 0:
+            return 100
+        a = 100
+        b = 0.6
+        c = 1
+        d = 2.0
+        local_cost = int(100 * max(1 - dist / d, 0))
+        distant_cost = int(a * np.tanh(max(b * (dist - d), 0)))
+        cost = local_cost + distant_cost + c * costmap_matrix[x, y] + 1
+        if cost > 100:
+            cost = 100
+        return cost
 
-        if x == 0 or y == 0 or x == occupancy_matrix.shape[0] - 1 or y == occupancy_matrix.shape[1] - 1:
-            self.get_logger().info('Out of bounds')
-            return 255
 
-        neighborhood = occupancy_matrix[x - kernel_size : x + kernel_size, y - kernel_size : y + kernel_size]
-        valid_values = neighborhood[neighborhood >= 0]
-        self.get_logger().info(f'Neighborhood: {neighborhood}')
-        self.get_logger().info(f'Mean: {np.mean(valid_values) if valid_values.size > 0 else 255}')
-        return np.mean(valid_values) if valid_values.size > 0 else 255
-
-    def find_closest_point(self, robot_position, contours, occupancy_matrix, epsilon=10, occupancy_threshold=10):
-        min_dist = float('inf')
+    def find_closest_point(self, robot_position, contours, costmap_matrix, min_cost=1):
+        cost = float('inf')
         closest_point = None
         for contour in contours:
             for point in contour:
                 px, py = point[0]
                 dist = np.hypot(px - robot_position[0], py - robot_position[1])
-                if epsilon < dist < min_dist:
-                    min_dist = dist
-                    if self.get_occupancy_value(occupancy_matrix, px, py) < occupancy_threshold:
-                        closest_point = (px, py)
+                new_cost = self.get_cost_heuristic(costmap_matrix, px, py, robot_position, dist)
+                self.get_logger().info(f'Cost at {px}, {py}: {new_cost}')
+                if min_cost < new_cost < cost:
+                    cost = new_cost
+                    closest_point = (px, py)
         return closest_point
 
     def get_goal_pose(self, closest_point):
@@ -113,7 +125,7 @@ class Pilot(Node):
 
     def find_goal(self):
         binary_known_cells_map = self.get_known_map_binary_image()
-        occupancy_matrix = self.get_occupancy_map_matrix()
+        costmap_matrix = self.get_costmap_matrix()
         contours, _ = cv2.findContours(binary_known_cells_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         try:
@@ -123,7 +135,7 @@ class Pilot(Node):
             return
 
         robot_position = self.get_robot_position_map_image_frame(t.transform.translation.x, t.transform.translation.y)
-        closest_point = self.find_closest_point(robot_position, contours, occupancy_matrix)
+        closest_point = self.find_closest_point(robot_position, contours, costmap_matrix)
         if closest_point is None:
             self.get_logger().info('No valid goal found')
             return
@@ -136,8 +148,8 @@ class Pilot(Node):
         self.get_logger().info(f'Published goal at: {goal_pose.pose.position.x}, {goal_pose.pose.position.y}')
 
     def process_map(self):
-        if self.current_map is None:
-            self.get_logger().info('Map not received yet')
+        if not self.current_map or not self.current_costmap:
+            self.get_logger().info('Map(s) not received yet')
             return
         self.get_logger().info('Processing map')
         self.find_goal()
