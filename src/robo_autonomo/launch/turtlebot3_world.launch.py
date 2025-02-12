@@ -37,7 +37,7 @@ def generate_launch_description():
     world = os.path.join(
         this_package_dir,
         'worlds',
-        'empty_world.world'
+        'turtlebot3_world.world'
     )
 
     gzserver_cmd = IncludeLaunchDescription(
