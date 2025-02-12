@@ -32,6 +32,11 @@ echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 ```
 
 # Rodando o projeto
+Se estiver usando docker, sempre que reiniciar o computador, você precisará executar:
+```bash
+xhost + local:docker
+```
+
 Primeiramente é necessário instalar as dependências do projeto:
 ```bash
 apt update
@@ -47,8 +52,6 @@ colcon build --symlink-install
 Para rodar a simulação, execute em terminais diferentes:
 ```bash
 source install/setup.bash
-export TURTLEBOT3_MODEL=waffle
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/humble/share/turtlebot3_gazebo/models
 ros2 launch robo_autonomo autonomous_movement.launch.py
 ```
 

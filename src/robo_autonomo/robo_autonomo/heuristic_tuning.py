@@ -33,6 +33,8 @@ class HeuristicCostmap(Node):
         self.current_costmap = msg
 
     def get_cost_heuristic(self, costmap_matrix, x, y, dist):
+        # return int(96 + x * self.current_map.info.resolution * 2)
+        # return -100 + x * self.current_map.info.resolution * 50
         height, width = costmap_matrix.shape
         
         # Verifica se o índice está dentro dos limites da matriz
@@ -44,7 +46,7 @@ class HeuristicCostmap(Node):
         
         self.get_logger().info(f'costmap_matrix[y, x]: {costmap_matrix[y, x]}')
         dist = dist * self.current_map.info.resolution
-        a = 100
+        a = 20
         b = 0.6
         c = 1
         d = 2.0

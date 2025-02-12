@@ -67,7 +67,7 @@ class Pilot(Node):
         """Returns an array 0 is free, 255 is occupied and 127 is unknown"""
         width = self.current_costmap.info.width
         height = self.current_costmap.info.height
-        data = np.array(self.current_costmap.data, dtype=np.int8).reshape((width, height))
+        data = np.array(self.current_costmap.data, dtype=np.int8).reshape((height, width))
         return data
 
     def get_cost_heuristic(self, costmap_matrix, x, y, robot_position, dist):
@@ -75,32 +75,39 @@ class Pilot(Node):
         Heuristic function to get the cost of a point based on its distance to the robot and global costmap.
         The farther the point is to the robot and the higher the occupancy value, the higher the cost.
         """
-        if costmap_matrix[x, y] < 0:
+        if costmap_matrix[y, x] < 0:
             return 100
-        a = 100
-        b = 0.6
-        c = 1
-        d = 2.0
-        local_cost = int(100 * max(1 - dist / d, 0))
-        distant_cost = int(a * np.tanh(max(b * (dist - d), 0)))
-        cost = local_cost + distant_cost + c * costmap_matrix[x, y] + 1
+        # a = 20
+        # b = 0.4
+        # c = 1
+        # d = 2.0
+        # local_cost = int(100 * max(1 - dist / d, 0))
+        # distant_cost = int(a * np.tanh(max(b * (dist - d), 0)))
+        # cost = local_cost + distant_cost + c * costmap_matrix[y, x]
+        cost = costmap_matrix[y, x]
         if cost > 100:
             cost = 100
         return cost
 
 
-    def find_closest_point(self, robot_position, contours, costmap_matrix, min_cost=1):
-        cost = float('inf')
+    def find_closest_point(self, robot_position, contours, costmap_matrix, max_cost=30.0):
+        cost = max_cost
         closest_point = None
+        self.get_logger().debug(f'Costmap matrix shape: {costmap_matrix.shape}')
         for contour in contours:
             for point in contour:
                 px, py = point[0]
                 dist = np.hypot(px - robot_position[0], py - robot_position[1])
                 new_cost = self.get_cost_heuristic(costmap_matrix, px, py, robot_position, dist)
-                self.get_logger().info(f'Cost at {px}, {py}: {new_cost}')
-                if min_cost < new_cost < cost:
+                self.get_logger().debug(f'Cost at {px}, {py}: {new_cost}')
+                if new_cost < cost:
                     cost = new_cost
                     closest_point = (px, py)
+        if closest_point:
+            self.get_logger().info(f'Closest point: {closest_point}')
+            self.get_logger().info(f'Cost: {cost}')
+            x, y = closest_point
+            self.get_logger().info(f'costmap arround: {costmap_matrix[y-3:y+4, x-3:x+4]}')
         return closest_point
 
     def get_goal_pose(self, closest_point):
@@ -136,12 +143,12 @@ class Pilot(Node):
 
         robot_position = self.get_robot_position_map_image_frame(t.transform.translation.x, t.transform.translation.y)
         closest_point = self.find_closest_point(robot_position, contours, costmap_matrix)
+        if self.debug_cv:
+            self.publish_contour_image(binary_known_cells_map, contours, robot_position, closest_point)
+
         if closest_point is None:
             self.get_logger().info('No valid goal found')
             return
-
-        if self.debug_cv:
-            self.publish_contour_image(binary_known_cells_map, contours, robot_position, closest_point)
 
         goal_pose = self.get_goal_pose(closest_point)
         self.goal_pose_pub_.publish(goal_pose)
@@ -160,7 +167,6 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
-    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()

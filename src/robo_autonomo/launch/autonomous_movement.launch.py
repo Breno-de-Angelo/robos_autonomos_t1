@@ -8,6 +8,12 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    os.environ['TURTLEBOT3_MODEL'] = 'waffle'
+    try:
+        os.environ['GAZEBO_MODEL_PATH'] = os.environ['GAZEBO_MODEL_PATH'] + ':' + os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models')
+    except KeyError:
+        os.environ['GAZEBO_MODEL_PATH'] = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models')
+
     this_package_dir = get_package_share_directory('robo_autonomo')
 
     turtlebot3_gazebo_launch_dir = get_package_share_directory('turtlebot3_gazebo')
