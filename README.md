@@ -44,6 +44,11 @@ rosdep update
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
+Em caso de problemas com a variável de ambiente ROS_DISTRO não setada no último comando, basta usar para a distro Humble do ROS2:
+```bash
+sudo rosdep install --from-paths src -r -y --ignore-src --rosdistro humble
+```
+
 Em seguida, compile o projeto:
 ```bash
 colcon build --symlink-install
