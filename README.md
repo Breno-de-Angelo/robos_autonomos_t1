@@ -49,18 +49,8 @@ Em seguida, compile o projeto:
 colcon build --symlink-install
 ```
 
-Para rodar a simulação, execute em terminais diferentes:
+Para rodar a simulação, execute:
 ```bash
 source install/setup.bash
 ros2 launch robo_autonomo autonomous_movement.launch.py
-```
-
-```bash
-source install/setup.bash
-ros2 run robo_autonomo pilot --ros-args -p debug_cv:=true -p use_sim_time:=true
-```
-
-```bash
-source install/setup.bash
-ros2 run robo_autonomo item_detector --ros-args -p debug:=true -p use_sim_time:=true
 ```

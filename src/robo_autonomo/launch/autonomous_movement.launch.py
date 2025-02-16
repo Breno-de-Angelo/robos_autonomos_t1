@@ -34,14 +34,16 @@ def generate_launch_description():
 
     pilot_node = Node(
         package=package_name,
-        executable='pilot',
-        name='pilot',
+        executable="pilot",
+        name="pilot",
+        parameters=[{"use_sim_time": True, "debug_cv": True}],
     )
 
     item_detector_node = Node(
         package=package_name,
-        executable='item_detector',
-        name='item_detector',
+        executable="item_detector",
+        name="item_detector",
+        parameters=[{"use_sim_time": True, "debug": True}],
     )
 
     rviz_config_file = os.path.join(
