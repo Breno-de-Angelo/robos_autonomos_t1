@@ -74,34 +74,39 @@ class Pilot(Node):
         data = np.array(self.current_costmap.data, dtype=np.int8).reshape((height, width))
         return data
 
-    def get_cost_heuristic(self, costmap_matrix, x, y, robot_position, dist):
+    def get_costmap_cost(self, costmap_matrix, x, y):
+        if costmap_matrix[y, x] < 0:
+            return 100
+        return costmap_matrix[y, x]
+
+    def get_cost_heuristic(self, costmap_cost, dist):
         """
         Heuristic function to get the cost of a point based on its distance to the robot and global costmap.
         The farther the point is to the robot and the higher the occupancy value, the higher the cost.
         """
-        if costmap_matrix[y, x] < 0:
-            return 100
-        # a = 20
-        # b = 0.4
-        # c = 1
+        # a = 5
+        # return costmap_cost + int(a * dist)
+        # a = 5.0
+        # b = 1.0
         # d = 2.0
         # local_cost = int(100 * max(1 - dist / d, 0))
-        # distant_cost = int(a * np.tanh(max(b * (dist - d), 0)))
-        # cost = local_cost + distant_cost + c * costmap_matrix[y, x]
-        cost = costmap_matrix[y, x]
-        if cost > 100:
-            cost = 100
-        return cost
+        # distant_cost = int(a * (max(dist - d, 0)))
+        # cost = local_cost + distant_cost + b * costmap_cost
+        # return cost
+        return costmap_cost
 
-    def find_closest_point(self, robot_position, contours, costmap_matrix, max_cost=30.0):
-        cost = max_cost
+    def find_closest_point(self, robot_position, contours, costmap_matrix, max_cost=75.0):
+        cost = float('inf')
         closest_point = None
         self.get_logger().debug(f'Costmap matrix shape: {costmap_matrix.shape}')
         for contour in contours:
             for point in contour:
                 px, py = point[0]
                 dist = np.hypot(px - robot_position[0], py - robot_position[1])
-                new_cost = self.get_cost_heuristic(costmap_matrix, px, py, robot_position, dist)
+                costmap_cost = self.get_costmap_cost(costmap_matrix, px, py)
+                if costmap_cost > max_cost:
+                    continue
+                new_cost = self.get_cost_heuristic(costmap_cost, dist)
                 self.get_logger().debug(f'Cost at {px}, {py}: {new_cost}')
                 if new_cost < cost:
                     cost = new_cost
