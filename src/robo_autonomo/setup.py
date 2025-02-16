@@ -24,9 +24,9 @@ setup(
     entry_points={
         "console_scripts": [
             # Add your executable scripts here if needed
-            'send_goal = robo_autonomo.send_goal:main',
             'pilot = robo_autonomo.pilot:main',
             'heuristic_tuning = robo_autonomo.heuristic_tuning:main',
+            'item_detector = robo_autonomo.item_detector:main',
         ],
     },
 )

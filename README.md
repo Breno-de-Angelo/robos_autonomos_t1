@@ -57,5 +57,10 @@ ros2 launch robo_autonomo autonomous_movement.launch.py
 
 ```bash
 source install/setup.bash
-ros2 run robo_autonomo pilot --ros-args -p debug_cv:=true
+ros2 run robo_autonomo pilot --ros-args -p debug_cv:=true -p use_sim_time:=true
+```
+
+```bash
+source install/setup.bash
+ros2 run robo_autonomo item_detector --ros-args -p debug:=true -p use_sim_time:=true
 ```
