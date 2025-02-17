@@ -1,3 +1,5 @@
+import math
+import random
 import rclpy
 import rclpy.logging
 import rclpy.time
@@ -88,14 +90,14 @@ class Pilot(Node):
         """
         # a = 5
         # return costmap_cost + int(a * dist)
-        # a = 5.0
-        # b = 1.0
-        # d = 2.0
-        # local_cost = int(100 * max(1 - dist / d, 0))
+        a = 5.0
+        b = 1.0
+        d = 4.0
+        local_cost = int(100 * max(1 - dist / d, 0))
         # distant_cost = int(a * (max(dist - d, 0)))
-        # cost = local_cost + distant_cost + b * costmap_cost
-        # return cost
-        return costmap_cost
+        cost = local_cost + b * costmap_cost
+        return cost
+        # return costmap_cost
 
     def find_closest_point(self, robot_position, contours, costmap_matrix, max_cost=75.0):
         cost = float('inf')
@@ -126,7 +128,11 @@ class Pilot(Node):
         goal_pose.header.frame_id = "map"
         goal_pose.pose.position.x = closest_point[0] * self.current_map.info.resolution + self.current_map.info.origin.position.x
         goal_pose.pose.position.y = closest_point[1] * self.current_map.info.resolution + self.current_map.info.origin.position.y
-        goal_pose.pose.orientation.w = 1.0  # No rotation
+        
+        random_yaw = random.uniform(0, 2 * math.pi)
+        goal_pose.pose.orientation.w = math.cos(random_yaw / 2)
+        goal_pose.pose.orientation.z = math.sin(random_yaw / 2)
+
         return goal_pose
 
     def publish_contour_image(self, img, contours, robot_position, closest_point):
