@@ -61,9 +61,7 @@ def generate_launch_description():
     )
 
     spawn_turtlebot_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(launch_file_dir, 'spawn_turtlebot3.launch.py')
-        ),
+        PythonLaunchDescriptionSource([this_package_dir, '/launch/spawn_turtlebot3.launch.py']),
         launch_arguments={
             'x_pose': x_pose,
             'y_pose': y_pose

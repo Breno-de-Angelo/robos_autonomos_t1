@@ -1,8 +1,21 @@
 from setuptools import setup
-import os
 from glob import glob
+import os
 
 package_name = "robo_autonomo"
+
+# Função para mapear cada arquivo para seu respectivo diretório dentro do `share/` no ROS
+def get_model_data_files():
+    data_files = []
+    base_dir = "models/"
+    
+    for root, _, files in os.walk(base_dir):
+        if files:
+            dest = os.path.join("share", package_name, root)  # Mantém a estrutura de diretórios
+            src_files = [os.path.join(root, f) for f in files]  # Lista de arquivos completos
+            data_files.append((dest, src_files))
+
+    return data_files
 
 setup(
     name=package_name,
@@ -12,8 +25,8 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         ("share/" + package_name + "/launch", glob("launch/*.launch.py")),
         ("share/" + package_name + "/config", glob("config/*.yaml") + glob("config/*.rviz")),
-        ("share/" + package_name + "/worlds", glob("worlds/*.world")),
-    ],
+        ("share/" + package_name + "/worlds", glob("worlds/*.world") + glob("worlds/group/*")),
+    ] + get_model_data_files(),  # Adiciona arquivos mantendo estrutura
     install_requires=["setuptools"],
     zip_safe=True,
     maintainer="Breno de Angelo",
@@ -26,7 +39,9 @@ setup(
             # Add your executable scripts here if needed
             'pilot = robo_autonomo.pilot:main',
             'heuristic_tuning = robo_autonomo.heuristic_tuning:main',
-            'item_detector = robo_autonomo.item_detector:main',
+            'item_detector_camera_and_2d_lidar = robo_autonomo.item_detector_camera_and_2d_lidar:main',
+            'item_detector_3d_lidar = robo_autonomo.item_detector_3d_lidar:main',
+            'item_detector_camera_and_3d_lidar = robo_autonomo.item_detector_camera_and_3d_lidar:main',
         ],
     },
 )

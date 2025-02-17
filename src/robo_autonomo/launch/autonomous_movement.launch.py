@@ -32,6 +32,21 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': 'true', 'params_file': f"{this_package_dir}/config/nav2_params.yaml"}.items()
     )
 
+    pointcloud_to_laserscan_node = Node(
+        package='pointcloud_to_laserscan',
+        executable='pointcloud_to_laserscan_node',
+        name='pointcloud_to_laserscan',
+        remappings=[
+            ('cloud_in', '/velodyne2/velodyne_points2'),
+            ('scan', '/scan'),
+        ],
+        parameters=[{
+            'target_frame': 'base_scan',
+            # 'max_height': 0.1
+        }],
+        output='screen',
+    )
+
     pilot_node = Node(
         package=package_name,
         executable="pilot",
@@ -42,7 +57,7 @@ def generate_launch_description():
     item_detector_node = Node(
         package=package_name,
         executable="item_detector",
-        name="item_detector",
+        name="item_detector_3d_lidar",
         parameters=[{"use_sim_time": True, "debug": True}],
     )
 
@@ -61,9 +76,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         turtlebot3_world_launch,
+        pointcloud_to_laserscan_node,
         slam_toolbox_launch,
         nav2_launch,
-        pilot_node,
-        item_detector_node,
+        # pilot_node,
+        # item_detector_node,
         rviz_node,
     ])
