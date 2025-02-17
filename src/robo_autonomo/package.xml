@@ -11,6 +11,15 @@
   <depend>turtlebot3_gazebo</depend>
   <depend>slam_toolbox</depend>
   <depend>nav2_bringup</depend>
+  <depend>pointcloud_to_laserscan</depend>
+  <depend>velodyne</depend>
+  <depend>velodyne_gazebo_plugins</depend>
+  <depend>velodyne_simulator</depend>
+  <depend>velodyne_description</depend>
+  <depend>velodyne_pointcloud</depend>
+  <depend>velodyne_msgs</depend>
+  <depend>velodyne_driver</depend>
+  <depend>velodyne_laserscan</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
