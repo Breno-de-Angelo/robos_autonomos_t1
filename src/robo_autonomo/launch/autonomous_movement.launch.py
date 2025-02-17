@@ -57,7 +57,7 @@ def generate_launch_description():
     item_detector_node = Node(
         package=package_name,
         executable="item_detector",
-        name="item_detector_3d_lidar",
+        name="item_detector_camera_and_lidar",
         parameters=[{"use_sim_time": True, "debug": True}],
     )
 

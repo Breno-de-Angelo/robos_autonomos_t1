@@ -39,9 +39,7 @@ setup(
             # Add your executable scripts here if needed
             'pilot = robo_autonomo.pilot:main',
             'heuristic_tuning = robo_autonomo.heuristic_tuning:main',
-            'item_detector_camera_and_2d_lidar = robo_autonomo.item_detector_camera_and_2d_lidar:main',
-            'item_detector_3d_lidar = robo_autonomo.item_detector_3d_lidar:main',
-            'item_detector_camera_and_3d_lidar = robo_autonomo.item_detector_camera_and_3d_lidar:main',
+            'item_detector_camera_and_lidar = robo_autonomo.item_detector_camera_and_lidar:main',
         ],
     },
 )
