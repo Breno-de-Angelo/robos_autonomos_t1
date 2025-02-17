@@ -75,6 +75,8 @@ class Pilot(Node):
         return data
 
     def get_costmap_cost(self, costmap_matrix, x, y):
+        if not (0 <= y < costmap_matrix.shape[0] and 0 <= x < costmap_matrix.shape[1]):
+            return 100
         if costmap_matrix[y, x] < 0:
             return 100
         return costmap_matrix[y, x]
@@ -112,10 +114,10 @@ class Pilot(Node):
                     cost = new_cost
                     closest_point = (px, py)
         if closest_point:
-            self.get_logger().info(f'Closest point: {closest_point}')
-            self.get_logger().info(f'Cost: {cost}')
+            self.get_logger().debug(f'Closest point: {closest_point}')
+            self.get_logger().debug(f'Cost: {cost}')
             x, y = closest_point
-            self.get_logger().info(f'costmap arround: {costmap_matrix[y-3:y+4, x-3:x+4]}')
+            self.get_logger().debug(f'costmap arround: {costmap_matrix[y-3:y+4, x-3:x+4]}')
         return closest_point
 
     def get_goal_pose(self, closest_point):
