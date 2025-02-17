@@ -107,7 +107,9 @@ class ObjectDetector(Node):
             for pred in det.predictions:
                 if pred.confidence < 0.6:
                     continue
-                pred_id = self.compute_new_detection(pred.x, pred.class_name, debug_image)
+                pred_id = self.compute_new_detection(pred.x, pred.y, pred.width, pred.height, pred.class_name, debug_image)
+                if pred_id is None:
+                    return
                 if debug_image is not None:
                     cv2.rectangle(debug_image, (int(pred.x - pred.width / 2), int(pred.y - pred.height / 2)), (int(pred.x + pred.width / 2), int(pred.y + pred.height / 2)), (0, 255, 0), 2)
                     cv2.putText(debug_image, f"{pred_id} ({pred.confidence:.2f})", (int(pred.x - pred.width / 2), int(pred.y - pred.height / 2 - 10)),
@@ -118,27 +120,42 @@ class ObjectDetector(Node):
             self.debug_pub.publish(debug_msg)
 
 
-    def compute_new_detection(self, x, label, debug_image=None):
+    def compute_new_detection(self, x, y, width, height, label, debug_image=None):
         fx = self.camera_info.k[0]
         cx = self.camera_info.k[2]
 
         angle_offset = math.atan2(x - cx, fx)
         position = self.get_position_from_scan_relative_to_base_scan(angle_offset)
+        if position is None:
+            return None
         position = self.get_position_relative_to_map_from_base_scan(position)
+
+        angle_offset_x_small = math.atan2(x - width/2 - cx, fx)
+        postion_x_small = self.get_position_from_scan_relative_to_base_scan(angle_offset_x_small)
+        if postion_x_small is None:
+            return None
+        angle_offset_x_big = math.atan2(x + width/2 - cx, fx)
+        postion_x_big = self.get_position_from_scan_relative_to_base_scan(angle_offset_x_big)
+        if postion_x_big is None:
+            return None
+        object_width = np.linalg.norm(np.array(postion_x_small) - np.array(postion_x_big))
 
         for index, previous_detection in enumerate(self.detections):
             if np.linalg.norm(np.array(previous_detection['position']) - np.array(position)) < 0.6:
-                pred_id = f"{previous_detection['label']}_{index}"
+                detection_index = index
                 break
         else:
             self.get_logger().info(f"position: {position}")
             self.get_logger().info(f"label: {label}")
-            pred_id = f"{label}_{len(self.detections)}"
-            self.detections.append({
-                "position": position,
-                "label": label,
-            })
+            self.detections.append({})
+            detection_index = len(self.detections) - 1
 
+        pred_id = f"{label}_{detection_index}"
+        self.detections[detection_index] = {
+            "position": position,
+            "label": label,
+            "width": object_width
+        }
         return pred_id
 
     def get_position_relative_to_map_from_base_scan(self, position):
@@ -179,7 +196,10 @@ class ObjectDetector(Node):
         self.get_logger().debug(f"Distance: {scan.ranges[index-5:index+6]}")
         subset = np.array(scan.ranges[index-5:index+6])
         filtered_subset = subset[np.isfinite(subset)]
-        distance = np.mean(filtered_subset) if filtered_subset.size > 0 else float('nan')
+        distance = np.mean(filtered_subset) if filtered_subset.size > 0 else None
+        if distance is None:
+            self.get_logger().warn("Couldn't compute distance")
+            return None
 
         # Check for valid distance
         if distance < scan.range_min or distance > scan.range_max:
@@ -223,7 +243,7 @@ class ObjectDetector(Node):
             with open(filename, 'w') as file:
                 for det in self.detections:
                     pos = det['position']
-                    file.write(f"{det['label']}: x={pos[0]:.2f}, y={pos[1]:.2f}, z={pos[2]:.2f}\n")
+                    file.write(f"{det['label']}: x={pos[0]:.2f}, y={pos[1]:.2f}, z={pos[2]:.2f}, width={det['width']}\n")
             self.get_logger().info(f"Detections saved to {filename}")
         except Exception as e:
             self.get_logger().error(f"Failed to write detections to file: {e}")
