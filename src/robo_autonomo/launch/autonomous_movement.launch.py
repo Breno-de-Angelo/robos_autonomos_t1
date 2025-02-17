@@ -5,6 +5,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
+from launch.actions import TimerAction
 
 
 def generate_launch_description():
@@ -56,7 +57,7 @@ def generate_launch_description():
 
     item_detector_node = Node(
         package=package_name,
-        executable="item_detector",
+        executable="item_detector_camera_and_lidar",
         name="item_detector_camera_and_lidar",
         parameters=[{"use_sim_time": True, "debug": True}],
     )
@@ -79,7 +80,9 @@ def generate_launch_description():
         pointcloud_to_laserscan_node,
         slam_toolbox_launch,
         nav2_launch,
-        # pilot_node,
-        # item_detector_node,
+        TimerAction(period=10.0,
+                    actions=[pilot_node]),
+        TimerAction(period=5.0,
+                    actions=[item_detector_node]),
         rviz_node,
     ])

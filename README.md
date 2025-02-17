@@ -42,11 +42,17 @@ Primeiramente é necessário instalar as dependências do projeto:
 apt update
 rosdep update
 rosdep install --from-paths src --ignore-src -r -y
+pip install inference
 ```
 
 Em seguida, compile o projeto:
 ```bash
 colcon build --symlink-install
+```
+
+Para usar a rede treinada para detecção de objetos na imagem, é necessário baixar o modelo. Para isso
+```bash
+export ROBOFLOW_API_KEY=""
 ```
 
 Para rodar a simulação, execute:
