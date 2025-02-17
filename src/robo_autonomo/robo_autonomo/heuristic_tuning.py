@@ -53,7 +53,7 @@ class HeuristicCostmap(Node):
         local_cost = int(100 * max(1 - dist / d, 0))
         distant_cost = int(a * np.tanh(max(b * (dist - d), 0)))
         cost = local_cost + distant_cost
-        cost = local_cost + distant_cost + c * costmap_matrix[y, x] + 1
+        # cost = local_cost + distant_cost + c * costmap_matrix[y, x] + 1
         # cost = costmap_matrix[y, x]
 
         if cost > 100:
